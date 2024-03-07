@@ -1,0 +1,150 @@
+app TrackerPro {
+  wasp: {
+    version: "^0.12.3"
+  },
+  title: "TrackerPro",
+  client: {
+    rootComponent: import { Layout } from "@src/Layout.jsx"
+  },
+  db: {
+    system: PostgreSQL,
+    prisma: {
+      clientPreviewFeatures: ["extendedWhereUnique"]
+    }
+  },
+  auth: {
+    userEntity: User,
+    methods: {
+      usernameAndPassword: {}
+    },
+    onAuthFailedRedirectTo: "/login",
+    onAuthSucceededRedirectTo: "/"
+  }
+}
+
+route LoginRoute { path: "/login", to: LoginPage }
+page LoginPage {
+  component: import Login from "@src/pages/auth/Login.jsx"
+}
+route SignupRoute { path: "/signup", to: SignupPage }
+page SignupPage {
+  component: import Signup from "@src/pages/auth/Signup.jsx"
+}
+
+entity User {=psl
+  id Int @id @default(autoincrement())
+  username String @unique
+  email String @unique
+  password String
+  role String
+  issues Issue[]
+  Comment Comment[]
+  Attachment Attachment[]
+psl=}
+
+entity Issue {=psl
+  id Int @id @default(autoincrement())
+  title String
+  description String
+  status String
+  priority String
+  assignee User @relation(fields: [assigneeId], references: [id])
+  assigneeId Int
+  createdDate DateTime @default(now())
+  updatedDate DateTime @updatedAt
+  comments Comment[]
+  attachments Attachment[]
+psl=}
+
+entity Comment {=psl
+  id Int @id @default(autoincrement())
+  issue Issue @relation(fields: [issueId], references: [id])
+  issueId Int
+  user User @relation(fields: [userId], references: [id])
+  userId Int
+  commentText String
+  timestamp DateTime @default(now())
+psl=}
+
+entity Attachment {=psl
+  id Int @id @default(autoincrement())
+  issue Issue @relation(fields: [issueId], references: [id])
+  issueId Int
+  fileName String
+  fileType String
+  fileSize Int
+  uploadedBy User @relation(fields: [uploadedById], references: [id])
+  uploadedById Int
+  uploadDate DateTime @default(now())
+psl=}
+
+action createIssue {
+  fn: import { createIssue } from "@src/actions.js",
+  entities: [Issue]
+}
+
+action createComment {
+  fn: import { createComment } from "@src/actions.js",
+  entities: [Comment]
+}
+
+action uploadAttachment {
+  fn: import { uploadAttachment } from "@src/actions.js",
+  entities: [Attachment, Issue, User]
+}
+
+action manageUser {
+  fn: import { manageUser } from "@src/actions.js",
+  entities: [User]
+}
+
+query getIssues {
+  fn: import { getIssues } from "@src/queries.js",
+  entities: [Issue]
+}
+
+query getIssueDetails {
+  fn: import { getIssueDetails } from "@src/queries.js",
+  entities: [Issue, Comment, Attachment]
+}
+
+query getAnalytics {
+  fn: import { getAnalytics } from "@src/queries.js",
+  entities: [Issue]
+}
+
+route DashboardRoute { path: "/", to: DashboardPage }
+page DashboardPage {
+  component: import DashboardPage from "@src/pages/Dashboard.jsx",
+  authRequired: true
+}
+
+route IssueCreationRoute { path: "/issue/create", to: IssueCreationPage }
+page IssueCreationPage {
+  component: import IssueCreationPage from "@src/pages/IssueCreation.jsx",
+  authRequired: true
+}
+
+route IssueListRoute { path: "/issues", to: IssueListPage }
+page IssueListPage {
+  component: import IssueListPage from "@src/pages/IssueList.jsx",
+  authRequired: true
+}
+
+route IssueDetailsRoute { path: "/issues/:id", to: IssueDetailsPage }
+page IssueDetailsPage {
+  component: import IssueDetailsPage from "@src/pages/IssueDetails.jsx",
+  authRequired: true
+}
+
+route UserManagementRoute { path: "/users/manage", to: UserManagementPage }
+page UserManagementPage {
+  component: import UserManagementPage from "@src/pages/UserManagement.jsx",
+  authRequired: true
+}
+
+route AnalyticsDashboardRoute { path: "/analytics", to: AnalyticsDashboardPage }
+page AnalyticsDashboardPage {
+  component: import AnalyticsDashboardPage from "@src/pages/AnalyticsDashboard.jsx",
+  authRequired: true
+}
